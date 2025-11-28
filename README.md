@@ -38,3 +38,13 @@ make master TEXBIN=/Library/TeX/texbin
 make clean      # 中間ファイル削除
 make distclean  # 生成物含め全削除
 ```
+
+### 5) 自動ビルド（watch）
+保存（Ctrl+S / Cmd+S）するたびに自動再ビルドします。PDFビューアは各自で開いたままにしてください。
+```bash
+# 修論
+make watch-master
+# 卒論
+make watch-bachelor
+```
+（内部的に `latexmk -pdfdvi -pvc` が走ります）
