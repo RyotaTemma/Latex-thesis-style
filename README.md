@@ -18,11 +18,16 @@ sudo tlmgr install latexmk uplatex dvipdfmx collection-langjapanese ptex-fontmap
 
 ### 2) ビルド
 ```bash
-cd /Users/cdl/Downloads/CDL_ThesisStyle
-make bachelor   # bachelor_sample.pdf
-make master     # master_sample.pdf
+
+# 任意のファイル名でビルド（拡張子なし）
+make main       # main.tex → main.pdf
+make bachelor   # bachelor_sample.tex → bachelor_sample.pdf
+make master     # master_sample.tex → master_sample.pdf
+
+# ディレクトリ内の全 .tex をPDF化
+make
 ```
-内部では `latexmk -pdfdvi` により DVI→PDF（dvipdfmx）まで自動実行します。必要に応じて dvipdfmx を追実行して互換性を安定化します。
+内部では `.latexmkrc` の設定により upLaTeX→DVI→PDF（dvipdfmx）まで自動実行します。
 
 バイナリ場所を上書きしたい場合:
 ```bash
@@ -35,13 +40,18 @@ make master TEXBIN=/Library/TeX/texbin
 
 ### 4) クリーン
 ```bash
-make clean      # 中間ファイル削除
-make distclean  # 生成物含め全削除
+make clean           # 全 .tex の補助ファイル削除
+make clean-main      # main.tex の補助ファイルのみ削除
+make distclean       # 全 .tex の生成物（PDF含む）削除
+make distclean-main  # main.tex の生成物（PDF含む）削除
 ```
 
 ### 5) 自動ビルド（watch）
 保存（Ctrl+S / Cmd+S）するたびに自動再ビルドします。PDFビューアは各自で開いたままにしてください。
 ```bash
+# 任意ファイルでウォッチ
+make watch-main
+
 # 修論
 make watch-master
 # 卒論

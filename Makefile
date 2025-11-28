@@ -5,44 +5,56 @@ DVIPDFMX ?= $(TEXBIN)/dvipdfmx
 DVIPDFMX_OPTS ?=
 LATEXMK_OPTS ?=
 
-# PDFを生成（デフォルトで両方）
-all: bachelor master
+## 動的ターゲット設定
+# ディレクトリ内の .tex を自動検出
+TEX_SRCS := $(wildcard *.tex)
+PDFS := $(TEX_SRCS:.tex=.pdf)
 
-# 卒論PDF
+.PHONY: all
+# すべての .tex から PDF を生成
+all: $(PDFS)
+
+# 便宜上、既存のエイリアスを残す（存在する場合のみ有効）
+.PHONY: bachelor master
 bachelor: bachelor_sample.pdf
-
-# 修論PDF
 master: master_sample.pdf
 
-# upLaTeX + dvipdfmx（latexmkにPDF生成まで任せる）
-bachelor_sample.pdf: bachelor_sample.tex cdl_thesis.sty
-	$(LATEXMK) -pdfdvi -gg -f bachelor_sample.tex
-	# 環境によっては2回目の変換で日本語埋め込みが安定するため再実行
-	$(DVIPDFMX) $(DVIPDFMX_OPTS) -o bachelor_sample.pdf bachelor_sample.dvi
+# `make main` のように拡張子なしでビルド
+%: %.pdf
+	@true
 
-master_sample.pdf: master_sample.tex cdl_thesis.sty
-	$(LATEXMK) -pdfdvi -gg -f master_sample.tex
-	# 環境によっては2回目の変換で日本語埋め込みが安定するため再実行
-	$(DVIPDFMX) $(DVIPDFMX_OPTS) -o master_sample.pdf master_sample.dvi
+# 基本ビルドルール（latexmk の設定は .latexmkrc に委譲）
+%.pdf: %.tex
+	$(LATEXMK) -f $(LATEXMK_OPTS) $<
 
-.PHONY: watch-bachelor watch-master
+.PHONY: watch-% watch-bachelor watch-master
+# 自動再ビルド（ビューアは各自で開く）
+watch-%:
+	$(LATEXMK) -pvc -f $(LATEXMK_OPTS) $*.tex
 
-# 保存のたびに自動再ビルド（PDFビューアは各自で開いておく）
+# 既存の個別ウォッチも維持
 watch-bachelor:
-	$(LATEXMK) -pdfdvi -pvc -f $(LATEXMK_OPTS) bachelor_sample.tex
-
+	$(LATEXMK) -pvc -f $(LATEXMK_OPTS) bachelor_sample.tex
 watch-master:
-	$(LATEXMK) -pdfdvi -pvc -f $(LATEXMK_OPTS) master_sample.tex
-.PHONY: clean distclean
+	$(LATEXMK) -pvc -f $(LATEXMK_OPTS) master_sample.tex
 
-# 中間生成物を削除
+.PHONY: clean clean-% distclean distclean-%
+# 補助ファイルのみ削除（全ファイル）
 clean:
-	$(LATEXMK) -C bachelor_sample.tex || true
-	$(LATEXMK) -C master_sample.tex || true
-	rm -f bachelor_sample.pdf master_sample.pdf
+	@for f in $(TEX_SRCS); do \
+		$(LATEXMK) -c $(LATEXMK_OPTS) $$f || true; \
+	done
+# 補助ファイルのみ削除（対象指定：make clean-main）
+clean-%:
+	$(LATEXMK) -c $(LATEXMK_OPTS) $*.tex || true
 
-# dvi等も含め、より徹底的に削除
-distclean: clean
-	rm -f *.dvi *.synctex.gz *.toc *.aux *.log *.fls *.fdb_latexmk
+# PDF を含む生成物を削除（全ファイル）
+distclean:
+	@for f in $(TEX_SRCS); do \
+		$(LATEXMK) -C $(LATEXMK_OPTS) $$f || true; \
+	done
+# PDF を含む生成物を削除（対象指定：make distclean-main）
+distclean-%:
+	$(LATEXMK) -C $(LATEXMK_OPTS) $*.tex || true
 
 
